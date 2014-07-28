@@ -1,116 +1,150 @@
 package hippo.example.hst.mock.components;
 
-import java.util.Collections;
-import org.hippoecm.hst.configuration.hosting.Mount;
-import org.hippoecm.hst.container.ModifiableRequestContextProvider;
-import org.hippoecm.hst.content.beans.manager.ObjectConverter;
-import org.hippoecm.hst.content.beans.manager.ObjectConverterImpl;
+import hippo.example.hst.mock.components.stubs.HstResponseStatusCodeStub;
+import hippo.example.hst.mock.components.stubs.ResolvedSiteMapItemStub;
 import org.hippoecm.hst.content.beans.standard.HippoBean;
-import org.hippoecm.hst.content.tool.ContentBeansTool;
-import org.hippoecm.hst.content.tool.DefaultContentBeansTool;
 import org.hippoecm.hst.core.component.HstRequest;
 import org.hippoecm.hst.core.component.HstResponse;
-import org.hippoecm.hst.core.request.ComponentConfiguration;
 import org.hippoecm.hst.core.request.HstRequestContext;
-import org.hippoecm.hst.core.request.ResolvedMount;
 import org.hippoecm.hst.core.request.ResolvedSiteMapItem;
-import org.hippoecm.hst.mock.content.beans.standard.MockHippoBean;
-import org.hippoecm.hst.mock.core.component.MockHstRequest;
-import org.hippoecm.hst.mock.core.request.MockComponentConfiguration;
-import org.hippoecm.hst.mock.core.request.MockHstRequestContext;
-import org.hippoecm.hst.mock.core.request.MockResolvedSiteMapItem;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
+import javax.servlet.http.HttpServletResponse;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.*;
 
 /**
- * Test class for {@link Detail}
+ * Test class for {@link hippo.example.hst.mock.components.Detail}
  */
+@RunWith(MockitoJUnitRunner.class)
 public class DetailTest {
+    /**
+     * Why using a spy - partial mocking  ?
+     *
+     * The request attribute is set, which is a void setter. If you not use a spy, you have to mock
+     * the request.setAttribute("document", doc) method. By using a spy, the "REAL" method is called on the partial mock
+     * which allows you to ignore implementation details of the object under test.
+     *
+     *
+     * See
+     * - http://stackoverflow.com/questions/14689348/mocking-a-spy-method-with-mockito?rq=1
+     * - http://docs.mockito.googlecode.com/hg/org/mockito/Mockito.html#13
+     * - http://blog.james-carr.org/2010/04/22/mockito-spy-annotation/
+     * - http://tutorials.jenkov.com/java-unit-testing/servlet-testing.html
+     * - http://monkeyisland.pl/2009/01/13/subclass-and-override-vs-partial-mocking-vs-refactoring/
+     */
 
-    private ContentBeansTool contentBeansTool;
+    @Spy
+    private Detail component = new Detail();
+
+    @Mock
+    private Detail mockComponent = new Detail();
+
+    @Mock
+    private HstRequest request;
+
+    @Mock
+    private HstRequestContext hstRequestContext;
+
+    @Mock
+    private HstResponse response;
+
+    @Mock
+    private HippoBean hippoBean;
+
+    @Mock
+    private ResolvedSiteMapItem resolvedSiteMapItem;
+
+    private ResolvedSiteMapItemStub resolvedSiteMapItemStub;
+
+    private  HstResponseStatusCodeStub hstResponseStatusCodeStub;
 
     @Before
     public void setUp() throws Exception {
-        contentBeansTool = new DefaultContentBeansTool(null) {
-            @Override
-            public ObjectConverter getObjectConverter() {
-                return new ObjectConverterImpl(Collections.EMPTY_MAP, new String[0]);
-            }
-        };
+        doReturn(hstRequestContext).when(request).getRequestContext();
+        resolvedSiteMapItemStub = new ResolvedSiteMapItemStub("test");
+        hstResponseStatusCodeStub = new HstResponseStatusCodeStub();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        ModifiableRequestContextProvider.clear();
-    }
-
+    /**
+     *
+     * If the content bean is found, the bean is set on the request attribute "document".
+     *
+     * If you use the spy, you do not need to set the request attribute, because the real method is called.
+     * This test will fail if you change the in the doBeforeRender method the name of attribute "document"
+     * into another value (for example "document2").
+     *
+     * @throws Exception
+     */
     @Test
-    public void doBeforeRender_FoundBean() throws Exception {
-        HippoBean detailBean = new MockHippoBean();
-
-        ComponentConfiguration componentConfiguration = new MockComponentConfiguration();
-        HstRequest request = new MockHstRequest();
-        HstResponse response = createMock(HstResponse.class);
-        HstRequestContext requestContext = new MockHstRequestContext();
-        ((MockHstRequestContext) requestContext).setContentBean(detailBean);
-        ((MockHstRequestContext) requestContext).setContentBeansTool(contentBeansTool);
-
-        ((MockHstRequest) request).setRequestContext(requestContext);
-        ModifiableRequestContextProvider.set(requestContext);
-        replay(response);
-
-        Detail detail = new Detail();
-        detail.init(null, componentConfiguration);
-        detail.doBeforeRender(request, response);
-        verify(response);
-
-        assertEquals(detailBean, request.getAttribute("document"));
+    public void doBeforeRenderFoundBeanUseSpy() throws Exception {
+        doReturn(hippoBean).when(hstRequestContext).getContentBean();
+        component.doBeforeRender(request, response);
+        verify(request).setAttribute("document", hippoBean);
     }
 
+
+    /**
+     *
+     * If the content bean is found, the bean is set on the request attribute "document".
+     * If you use the mock, you have to set the request attribute.
+     *
+     * This test is obsolete because it will always be succesfull,
+     * even if you change the in the doBeforeRender the name of attribute "document" into "document2".
+     *
+     * @throws Exception
+     */
     @Test
-    public void doBeforeRender_MissingBean() throws Exception {
+    public void doBeforeRenderFoundBeanUseMock() throws Exception {
+        doReturn(hippoBean).when(hstRequestContext).getContentBean();
+        request.setAttribute("document", hippoBean);
+        mockComponent.doBeforeRender(request, response);
+        verify(request).setAttribute("document", hippoBean);
+    }
 
-        ComponentConfiguration componentConfiguration = new MockComponentConfiguration();
-        HstRequest request = new MockHstRequest();
-        HstResponse response = createMock(HstResponse.class);
-
-        HstRequestContext requestContext = new MockHstRequestContext();
-        ResolvedMount resolvedMount = createMock(ResolvedMount.class);
-        Mount mount = createMock(Mount.class);
-        ((MockHstRequestContext) requestContext).setResolvedMount(resolvedMount);
-        ((MockHstRequestContext) requestContext).setContentBeansTool(contentBeansTool);
-
-        ResolvedSiteMapItem resolvedSiteMapItem = new MockResolvedSiteMapItem();
-        ((MockResolvedSiteMapItem) resolvedSiteMapItem).setRelativeContentPath("common/detail");
-        ((MockHstRequestContext) requestContext).setResolvedSiteMapItem(resolvedSiteMapItem);
-
-        ((MockHstRequest) request).setRequestContext(requestContext);
-        ModifiableRequestContextProvider.set(requestContext);
-
-        expect(resolvedMount.getMount()).andReturn(mount);
-        expect(mount.getContentPath()).andReturn("/hst:hst/hst:sites/mysite-live/hst:content");
-
-        ((MockHstRequest) request).setRequestContext(requestContext);
-
-        response.setStatus(HstResponse.SC_NOT_FOUND);
-        expectLastCall();
-        replay(response);
-
-        Detail detail = new Detail();
-        detail.init(null, componentConfiguration);
-        detail.doBeforeRender(request, response);
-        verify(response);
-
+    /**
+     *
+     * If the content bean is null, the request attribute "document" is null.
+     *
+     * You cannot verify the response status, because the HstResponse interface does not has a public method
+     * for retrieving the response status
+     *
+     * @throws Exception
+     */
+    @Test
+    public void doBeforeRenderMissingBeanSpy() throws Exception {
+        doReturn(null).when(hstRequestContext).getContentBean();
+        doReturn(resolvedSiteMapItem).when(hstRequestContext).getResolvedSiteMapItem();
+        doReturn("news").when(resolvedSiteMapItem).getRelativeContentPath();
+        component.doBeforeRender(request, response);
+        doReturn("news").when(resolvedSiteMapItem).getPathInfo();
         assertNull(request.getAttribute("document"));
+    }
+    /**
+     *
+     * If the content bean is null, the request attribute "document" is null.
+     *
+     * If you use a stub for the resolvedSiteMapItem, you do not need to mock the
+     * relativeContentPath and pathInfo methods.
+     *
+     * If you inject a stub of the response, you can check the response status.
+     * The stub has a getter of the response status
+     *
+     * @throws Exception
+     */
+    @Test
+    public void doBeforRenderMissingBeanStubResponse() throws Exception {
+        doReturn(null).when(hstRequestContext).getContentBean();
+        doReturn(resolvedSiteMapItemStub).when(hstRequestContext).getResolvedSiteMapItem();
+        component.doBeforeRender(request, hstResponseStatusCodeStub);
+        assertNull(request.getAttribute("document"));
+        assertEquals(hstResponseStatusCodeStub.getStatus(),HttpServletResponse.SC_NOT_FOUND);
     }
 
 }

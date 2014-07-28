@@ -1,0 +1,47 @@
++ Use Case : News articles with paid content.
+=============================================
+
+If a news article is paid content, the site shows a teaser in stead of the complete news article, a buy button and
+the price. Also an action code form is shown. If the user enters the action code, and the action code is valid
+the price is lowered according to the discount of the action.
+
+
++ What is the objective ?
+===========================
+
+A blog showing how ou can build a high quality CMS implementation and website with Custom validators, unit tests and
+QA Essentials tests. The blog explains how the paidContent use case is implemented and tested.
+
+The targeted audience are experienced Hippo developers who want to know how to build a high quality CMS implementation
+and website.
+
+
++ Field in Newsdocument
+=======================
+
+* Boolean isPaidContent
+* Html teaser
+* Double price
+* String actionCode
+* Calendar start and end date
+* Double discount (0-100 %)
+
+
++ Pseudo code Calculate price
+==============================
+
+function double calculatePrice(news){
+
+    if (news isPaidContent) {
+        if (isValidActionCode(news.actionCode) && news.start < currentTime < news.end){
+            return price * discount / 100
+        } else {
+            return price
+        }
+    }
+}
+
+
+function boolean isValidActionCode(String actionCode){
+    return actioncode isAlphaNumeric
+}
