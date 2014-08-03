@@ -23,7 +23,7 @@ and website.
 * Html teaser
 * Double price
 * String actionCode
-* Calendar start and end date
+* Calendar actionCode start and end date
 * Double discount (0-100 %)
 
 

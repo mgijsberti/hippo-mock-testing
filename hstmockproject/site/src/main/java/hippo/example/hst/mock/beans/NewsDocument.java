@@ -34,5 +34,28 @@ public class NewsDocument extends BaseDocument{
         return getLinkedBean("hstmockproject:image", HippoGalleryImageSetBean.class);
     }
 
+    public String getTeaser(){
+        return getProperty("hstmockproject:teaser");
+    }
+
+    public Double getPrice(){
+        return getProperty("hstmockproject:price");
+    }
+
+    public String getActionCode(){
+        return getProperty("hstmockproject:actioncode");
+    }
+
+    public Calendar getActionStart(){
+        return getProperty("hstmockproject:actionstart");
+    }
+
+    public Calendar getActionEnd(){
+        return getProperty("hstmockproject:actionend");
+    }
+
+    public Double getDiscount(){
+        return getProperty("hstmockproject:discount");
+    }
 
 }
